@@ -1,0 +1,30 @@
+<!DOCTYPE <!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Pong</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" type="text/css" media="screen" href="index.css" />
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="hammer.js"></script>
+    <script src="index.js"></script>
+</head>
+<body>
+    <div id="ball">
+
+    </div>
+    <div class="paddle">
+
+    </div>
+    <p>
+        Press arrow up or arrow down key and watch how they are sent to other browser windows using websockets.
+        Note that the sending browser window does not receive the message. This is by design.
+    </p>
+
+    <ul id='keys'></ul>
+
+</body>
+</html>
