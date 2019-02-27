@@ -12,7 +12,7 @@ window.addEventListener("load", async () => {
     }   
     
     /** Represents directions  */
-    enum Direction { top, right, bottom, left };
+    enum Direction { top, right, bottom, left, leftPaddle, rightPaddle };
   
     // Get some information about the browser window and the ball. This information will
     // never change. So it makes sense to get it only once to make the rest of the program faster.
@@ -23,7 +23,7 @@ window.addEventListener("load", async () => {
     const clientHalfSize = splitSize(clientSize, 2);
     
     //Paddle
-    const paddle = <HTMLDivElement>document.getElementsByClassName('paddle')[0];
+    const paddle = <HTMLDivElement>document.getElementsByClassName('left_paddle')[0];
     const paddleHeight = paddle.clientHeight;
     const paddleHalfHeight = paddleHeight / 2;
     let currentPaddlePosition = paddle.clientTop;
@@ -37,17 +37,7 @@ window.addEventListener("load", async () => {
     let direction: number;
 
 
-    // Move ball to center of the screen
-    let ballCurrentPosition: Point = { x: clientHalfSize.width, y: clientHalfSize.height };
-    moveBall(ballCurrentPosition);
-  
-    // Calculate the random angle that the ball should initially travel.
-    // Should be an angle between 27.5 and 45 DEG (=PI/8 and PI/4 RAD)
-    const angle = Math.PI / 8 + Math.random() * Math.PI / 8;
-  
-    // Calculate the random quadrant into which the ball should initially travel.
-    // 0 = upper right, 1 = lower right, 2 = lower left, 3 = upper left
-    let quadrant = Math.floor(Math.random() * 4);
+    
   
     document.addEventListener('keydown', event => {
       // We have to check whether a movement is already in progress. This is
@@ -107,28 +97,75 @@ window.addEventListener("load", async () => {
         paddle.style.setProperty('top', `${currentPaddlePosition}px`);
       }
     }
-    do {
-      // Calculate target.
-      // X-coordinate is either right or left border of browser window (depending on
-      //              target quadrant)
-      // y-coordinate is calculated using tangens angle function of angle
-      //              (note: tan(angle) = delta-y / delta-x). The sign depends on
-      //              the target quadrant)
-      clientSize = { width: document.documentElement.clientWidth, height: document.documentElement.clientHeight };
-      const targetX = (quadrant === 0 || quadrant === 1) ? clientSize.width - ballSize.width : 0;
-      const targetBallPosition: Point = {
-        x: targetX,
-        y: ballCurrentPosition.y + Math.tan(angle) * Math.abs(targetX - ballCurrentPosition.x) * ((quadrant === 0 || quadrant === 3) ? -1 : 1)
-      };
-  
-      if(ballCurrentPosition.y>currentPaddlePosition+paddleHeight&&ballCurrentPosition.y<currentPaddlePosition){
-        let paddleCurrentPosition: Point = { x: ballCurrentPosition.x, y: currentPaddlePosition };
-        const paddleTouch = await animateBall(ballCurrentPosition, paddleCurrentPosition);
-        switch (paddleTouch.touchDirection) {
+
+    let out: boolean;
+    game();
+    let score_left: number = 0;
+    let score_right: number = 0;
+    async function game() {
+      out = false;
+      // Move ball to center of the screen
+      let ballCurrentPosition: Point = { x: clientHalfSize.width, y: clientHalfSize.height };
+      moveBall(ballCurrentPosition);
+    
+      // Calculate the random angle that the ball should initially travel.
+      // Should be an angle between 27.5 and 45 DEG (=PI/8 and PI/4 RAD)
+      const angle = Math.PI / 8 + Math.random() * Math.PI / 8;
+    
+      // Calculate the random quadrant into which the ball should initially travel.
+      // 0 = upper right, 1 = lower right, 2 = lower left, 3 = upper left
+      let quadrant = Math.floor(Math.random() * 4);
+      do {
+        // Calculate target.
+        // X-coordinate is either right or left border of browser window (depending on
+        //              target quadrant)
+        // y-coordinate is calculated using tangens angle function of angle
+        //              (note: tan(angle) = delta-y / delta-x). The sign depends on
+        //              the target quadrant)
+        clientSize = { width: document.documentElement.clientWidth, height: document.documentElement.clientHeight };
+        const targetX = (quadrant === 0 || quadrant === 1) ? clientSize.width - ballSize.width : 0;
+        const targetBallPosition: Point = {
+          x: targetX,
+          y: ballCurrentPosition.y + Math.tan(angle) * Math.abs(targetX - ballCurrentPosition.x) * ((quadrant === 0 || quadrant === 3) ? -1 : 1)
+        };
+    
+        if(ballCurrentPosition.y>currentPaddlePosition+paddleHeight&&ballCurrentPosition.y<currentPaddlePosition){
+          let paddleCurrentPosition: Point = { x: ballCurrentPosition.x, y: currentPaddlePosition };
+          const paddleTouch = await animateBall(ballCurrentPosition, paddleCurrentPosition);
+          switch (paddleTouch.touchDirection) {
+            case Direction.left: 
+              quadrant = (quadrant === 2) ? 1 : 0;
+              break;
+            case Direction.right:
+              quadrant = (quadrant === 0) ? 3 : 2;
+              break;
+            case Direction.top:
+              quadrant = (quadrant === 0) ? 1 : 2;
+              break;
+            case Direction.bottom:
+              quadrant = (quadrant === 2) ? 3 : 0;
+              break;
+            default:
+              throw new Error('Invalid direction, should never happen');
+          }
+        }
+
+        // Animate ball to calculated target position
+        const borderTouch = await animateBall(ballCurrentPosition, targetBallPosition);
+    
+        // Based on where the ball touched the browser window, we change the new target quadrant.
+        // Note that in this solution the angle stays the same.
+        switch (borderTouch.touchDirection) {
           case Direction.left: 
+            score_right++;
+            $('.right_score')[0].innerHTML = score_right + "";
+            out = true;
             quadrant = (quadrant === 2) ? 1 : 0;
             break;
           case Direction.right:
+            score_left++;
+            $('.left_score')[0].innerHTML = score_left + "";
+            out = true;
             quadrant = (quadrant === 0) ? 3 : 2;
             break;
           case Direction.top:
@@ -137,39 +174,24 @@ window.addEventListener("load", async () => {
           case Direction.bottom:
             quadrant = (quadrant === 2) ? 3 : 0;
             break;
+          case Direction.leftPaddle: 
+            quadrant = (quadrant === 2) ? 1 : 0; 
+            break;
+          case Direction.rightPaddle: 
+            quadrant = (quadrant === 0) ? 3 : 2; 
+            break;
           default:
             throw new Error('Invalid direction, should never happen');
         }
-      }
-
-      // Animate ball to calculated target position
-      const borderTouch = await animateBall(ballCurrentPosition, targetBallPosition);
-  
-      // Based on where the ball touched the browser window, we change the new target quadrant.
-      // Note that in this solution the angle stays the same.
-      switch (borderTouch.touchDirection) {
-        case Direction.left: 
-          quadrant = (quadrant === 2) ? 1 : 0;
-          break;
-        case Direction.right:
-          quadrant = (quadrant === 0) ? 3 : 2;
-          break;
-        case Direction.top:
-          quadrant = (quadrant === 0) ? 1 : 2;
-          break;
-        case Direction.bottom:
-          quadrant = (quadrant === 2) ? 3 : 0;
-          break;
-        default:
-          throw new Error('Invalid direction, should never happen');
-      }
-  
-      // The touch position is the new current position of the ball.
-      // Note that we fix the position here slightly in case a small piece of the ball has reached an area
-      // outside of the visible browser window.
-      ballCurrentPosition.x = Math.min(Math.max(borderTouch.touchPosition.x - ballHalfSize.width, 0) + ballHalfSize.width, clientSize.width);
-      ballCurrentPosition.y = Math.min(Math.max(borderTouch.touchPosition.y - ballHalfSize.height, 0) + ballHalfSize.height, clientSize.height);
-    } while (true); // Forever
+    
+        // The touch position is the new current position of the ball.
+        // Note that we fix the position here slightly in case a small piece of the ball has reached an area
+        // outside of the visible browser window.
+        ballCurrentPosition.x = Math.min(Math.max(borderTouch.touchPosition.x - ballHalfSize.width, 0) + ballHalfSize.width, clientSize.width);
+        ballCurrentPosition.y = Math.min(Math.max(borderTouch.touchPosition.y - ballHalfSize.height, 0) + ballHalfSize.height, clientSize.height);
+      } while (!out); 
+    game();
+    }
   
     /**
      * Animate the ball from the current position to the target position. Stops
@@ -209,10 +231,14 @@ window.addEventListener("load", async () => {
           if ((animatedPosition.y - ballHalfSize.height) < 0) { touchDirection = Direction.top; }
           if ((animatedPosition.x + ballHalfSize.width) > clientSize.width) { touchDirection = Direction.right; }
           if ((animatedPosition.y + ballHalfSize.height) > clientSize.height) { touchDirection = Direction.bottom; }
-          if(overlaps( $('#ball'), $('.paddle') )){
+          if(overlaps( $('#ball'), $('.left_paddle') )){
             //links
-            touchDirection= Direction.left;
-          }  
+            touchDirection= Direction.leftPaddle;
+          }
+          if(overlaps( $('#ball'), $('.right_paddle') )){
+            //rechts
+            touchDirection= Direction.rightPaddle;
+          }    
   
           if (touchDirection !== undefined) {
             // Ball touches border -> stop animation

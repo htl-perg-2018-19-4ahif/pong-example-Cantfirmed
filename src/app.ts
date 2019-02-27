@@ -1,7 +1,7 @@
 import express = require('express');
 import http = require('http');
 import path = require('path');
-import sio = require('socket.io');
+import sio from 'socket.io';
 
 const app = express();
 app.use(express.json());
@@ -16,7 +16,7 @@ sio(server).on('connection', (socket) => {
   // Handle an ArrowKey event
   socket.on('ArrowKey', function(code) {
     console.log(`${code} pressed`);
-
+    
     // Broadcast the event to all connected clients except the sender
     socket.broadcast.emit('ArrowKey', code);
   });

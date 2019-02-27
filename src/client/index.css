@@ -5,11 +5,9 @@ html, body {
     width: 100%;
     overflow: hidden;
 }
-html {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-}
+
 body {
-    background-color: gray;
+    background-color: black;
 }
 
 #ball {
@@ -19,10 +17,37 @@ body {
     background-color: white;
 }
 
-.paddle {
+.left_paddle {
     position: absolute;
     width: 20px;
     height: 100px;
     background-color: white;
     left: 50px;
 }
+
+html {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.right_paddle {
+    position: absolute;
+    width: 20px;
+    height: 100px;
+    background-color: white;
+    right: 50px;
+}
+
+.left_score {
+    text-align:center;
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.right_score {
+    text-align:center;
+    color: white;
+    font-size: 20px;
+    font-weight: bold;
+
+} 
